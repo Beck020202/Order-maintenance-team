@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>질서계도 팀 현황판 (실시간)</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 10px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    select, input { width: 100%; }
+    h2 { text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>질서계도 팀 현황판 (실시간)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>이름</th>
+        <th>위치</th>
+        <th>메모</th>
+        <th>사진 수</th>
+      </tr>
+    </thead>
+    <tbody id="status-table">
+      <!-- Rows inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBa8qshQ5bqnjyy2YviN_XPmu2Ywzy2o4M",
+      authDomain: "order-maintenance-team.firebaseapp.com",
+      projectId: "order-maintenance-team",
+      storageBucket: "order-maintenance-team.firebasestorage.app",
+      messagingSenderId: "560534801748",
+      appId: "1:560534801748:web:ddecb15fcbdd1bd02b4cc1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const team = ["성학", "준상", "병관", "세권", "한빈", "재훈", "윤재"];
+    const locations = ["CP", "4륜 순찰", "2륜 순찰", "도보 순찰", "중앙 광장", "화장실", "민원 해결", "식사"];
+
+    const table = document.getElementById("status-table");
+
+    team.forEach(name => {
+      const row = document.createElement("tr");
+
+      const nameCell = document.createElement("td");
+      nameCell.textContent = name;
+      row.appendChild(nameCell);
+
+      const locationCell = document.createElement("td");
+      locations.forEach(loc => {
+        const label = document.createElement("label");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = name + "-location";
+        radio.value = loc;
+        radio.addEventListener("change", () => {
+          db.ref("team/" + name).update({ location: loc });
+        });
+        label.appendChild(radio);
+        label.append(" " + loc);
+        locationCell.appendChild(label);
+        locationCell.appendChild(document.createElement("br"));
+      });
+      row.appendChild(locationCell);
+
+      const memoCell = document.createElement("td");
+      const memoInput = document.createElement("input");
+      memoInput.type = "text";
+      memoInput.placeholder = "메모 입력";
+      memoInput.addEventListener("change", () => {
+        db.ref("team/" + name).update({ memo: memoInput.value });
+      });
+      memoCell.appendChild(memoInput);
+      row.appendChild(memoCell);
+
+      const photoCell = document.createElement("td");
+      const photoInput = document.createElement("input");
+      photoInput.type = "number";
+      photoInput.min = 0;
+      photoInput.addEventListener("change", () => {
+        db.ref("team/" + name).update({ photos: photoInput.value });
+      });
+      photoCell.appendChild(photoInput);
+      row.appendChild(photoCell);
+
+      table.appendChild(row);
+
+      // 실시간 동기화
+      db.ref("team/" + name).on("value", snapshot => {
+        const data = snapshot.val() || {};
+        const locationRadios = document.getElementsByName(name + "-location");
+        locationRadios.forEach(r => r.checked = (r.value === data.location));
+        memoInput.value = data.memo || "";
+        photoInput.value = data.photos || "";
+      });
+    });
+  </script>
+</body>
+</html>
